@@ -3,6 +3,13 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+.env
+.venv/
+__pycache__/
+*.pyc
+faiss_index/
+docs/
+
 # User-specific files
 *.rsuser
 *.suo
