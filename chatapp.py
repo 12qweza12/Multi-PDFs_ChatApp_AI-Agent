@@ -76,7 +76,7 @@ def user_input(user_question):
 
 
 def main():
-    st.set_page_config("Multi PDF Chatbot", page_icon = ":scroll:")
+    st.set_page_config("TUTHINK-PDF", page_icon = ":scroll:")
     st.header("Multi-PDF's 📚 - Chat Agent 🤖 ")
 
     user_question = st.text_input("Ask a Question from the PDF Files uploaded .. ✍️📝")
@@ -91,12 +91,14 @@ def main():
         
         st.title("📁 PDF File's Section")
         pdf_docs = st.file_uploader("Upload your PDF Files & \n Click on the Submit & Process Button ", accept_multiple_files=True)
-        if st.button("Submit & Process"):
+        if st.button("Submit & Process") == True:
             with st.spinner("Processing..."): # user friendly message.
                 raw_text = get_pdf_text(pdf_docs) # get the pdf text
                 text_chunks = get_text_chunks(raw_text) # get the text chunks
                 get_vector_store(text_chunks) # create vector store
                 st.success("Done")
+        else:
+            st.warning("Please upload PDF files and click on the Submit & Process button to start.")
         
 
 
