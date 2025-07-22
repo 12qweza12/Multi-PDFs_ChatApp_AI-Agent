@@ -33,7 +33,7 @@ def get_text_chunks(text):
 def get_vector_store(text_chunks):
     embeddings = GoogleGenerativeAIEmbeddings(model = "models/embedding-001")
     vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
-    vector_store.save_local("faiss_index")
+    vector_store.save_local("faiss_index") #บันทึก vector store ใน folder ชื่อ faiss_index
 
 
 def get_conversational_chain():
@@ -64,41 +64,78 @@ def user_input(user_question):
 
     chain = get_conversational_chain()
 
-    
     response = chain(
         {"input_documents":docs, "question": user_question}
         , return_only_outputs=True)
 
-    print(response)
-    st.write("Reply: ", response["output_text"])
+    # print(response)
+    # st.write("Reply: ", response["output_text"])
+    
+    st.write("Reply: ", response)
+    # แสดงคำถามของ user ด้านขวา
+    st.markdown(
+        f"""
+        <div style="text-align: right; background-color: #f9f9f9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+            <b>User:</b> {user_question}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # แสดงคำตอบของ AI ด้านซ้าย
+    st.markdown(
+        f"""
+        <div style="text-align: left; background-color: #e8f5e9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+            <b>TUTHINK 🤖:</b> {response["output_text"]}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 
 
 def main():
-    st.set_page_config("TUTHINK-PDF", page_icon = ":scroll:")
-    st.header("Multi-PDF's 📚 - Chat Agent 🤖 ")
-
-    user_question = st.text_input("Ask a Question from the PDF Files uploaded .. ✍️📝")
-
-    if user_question:
-        user_input(user_question)
+    st.set_page_config("TUTHINK-PDF", page_icon=":computer:")
+    st.header("TUTHINK - Chatbot 📋🗂️🏥")
 
     with st.sidebar:
-
         st.image("img/chatbot.jpg")
         st.write("---")
         
-        st.title("📁 PDF File's Section")
-        pdf_docs = st.file_uploader("Upload your PDF Files & \n Click on the Submit & Process Button ", accept_multiple_files=True)
-        if st.button("Submit & Process") == True:
-            with st.spinner("Processing..."): # user friendly message.
-                raw_text = get_pdf_text(pdf_docs) # get the pdf text
-                text_chunks = get_text_chunks(raw_text) # get the text chunks
-                get_vector_store(text_chunks) # create vector store
-                st.success("Done")
-        else:
-            st.warning("Please upload PDF files and click on the Submit & Process button to start.")
+        st.title("About TUTHINK")
+        st.markdown("📖 TUTHINK เป็นแอปพลิเคชันที่ช่วยตอบคำถามเกี่ยวกับเอกสาร PDF")
+        
+        
+    # บังคับให้ user ถามคำถามจาก PDF ที่กำหนดไว้เท่า
+    with st.spinner("กำลังเริ่มต้นและประมวลผลเอกสาร PDF ครับ..."):
+        predefined_pdf_path = "docs/TU-PDF 01.pdf"  # Path to the embedded PDF file
+        with open(predefined_pdf_path, "rb") as pdf_file:  # rb คือ read binary อ่านข้อมูลจากไฟล์ PDFที่เป็น binary
+            raw_text = get_pdf_text([pdf_file])  # Process the predefined PDF
+            text_chunks = get_text_chunks(raw_text)  # Get text chunks
+            get_vector_store(text_chunks)  # Create vector store
+        st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
+
+    # ช่องถามคำถามของ user
+    user_question = st.text_input("Ask a Question from PDF ✍️📝")
+
+    # run function ประมวลผลคำถามของ user
+    if user_question:
+        user_input(user_question)
+
+    # with st.sidebar:
+
+    #     st.image("img/chatbot.jpg")
+    #     st.write("---")
+        
+    #     st.title("📁 PDF File's Section")
+    #     pdf_docs = st.file_uploader("Upload your PDF Files & \n Click on the Submit & Process Button ", accept_multiple_files=True)
+    #     if st.button("Submit & Process"):
+    #         with st.spinner("Processing..."): # user friendly message.
+    #             raw_text = get_pdf_text(pdf_docs) # get the pdf text
+    #             text_chunks = get_text_chunks(raw_text) # get the text chunks
+    #             get_vector_store(text_chunks) # create vector store
+    #             st.success("Done")
         
 
 
