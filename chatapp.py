@@ -25,7 +25,7 @@ def get_pdf_text(pdf_docs):
 
 
 def get_text_chunks(text):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=5000, chunk_overlap=800)
     chunks = text_splitter.split_text(text)
     return chunks
 
@@ -67,30 +67,60 @@ def user_input(user_question):
     response = chain(
         {"input_documents":docs, "question": user_question}
         , return_only_outputs=True)
+                                    
+    #เก็บคำถามและคำตอบใน chat_history
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+    st.write(st.session_state.chat_history)
+    
+    st.session_state.chat_history.append({"user": user_question, "tuthink": response["output_text"]})
+    
+    # feature แสดงประวัติการสนทนา จ้า //start
+    for chat in st.session_state.chat_history:
+        # แสดงคำถามของ user ด้านขวา    
+        st.markdown(
+            f"""
+            <div style="text-align: right; background-color: #f9f9f9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                <b>User:</b> {chat["user"]}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )    
+        
+        # แสดงคำตอบของ AI ด้านซ้าย    
+        st.markdown(
+            f"""
+            <div style="text-align: left; background-color: #e8f5e9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                <b>TUTHINK 🤖:</b> {chat["tuthink"]}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    # feature แสดงประวัติการสนทนา //stop
 
     # print(response)
     # st.write("Reply: ", response["output_text"])
     
     # st.write("Reply: ", response)
     # แสดงคำถามของ user ด้านขวา
-    st.markdown(
-        f"""
-        <div style="text-align: right; background-color: #f9f9f9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
-            <b>User:</b> {user_question}
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # st.markdown(
+    #     f"""
+    #     <div style="text-align: right; background-color: #f9f9f9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+    #         <b>User:</b> {user_question}
+    #     </div>
+    #     """,
+    #     unsafe_allow_html=True
+    # )
 
     # แสดงคำตอบของ AI ด้านซ้าย
-    st.markdown(
-        f"""
-        <div style="text-align: left; background-color: #e8f5e9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
-            <b>TUTHINK 🤖:</b> {response["output_text"]}
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # st.markdown(
+    #     f"""
+    #     <div style="text-align: left; background-color: #e8f5e9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+    #         <b>TUTHINK 🤖:</b> {response["output_text"]}
+    #     </div>
+    #     """,
+    #     unsafe_allow_html=True
+    # )
 
 
 
@@ -111,7 +141,7 @@ def main():
     if "vector_store" not in st.session_state:
     # บังคับให้ user ถามคำถามจาก PDF ที่กำหนดไว้เท่า
         with st.spinner("กำลังเริ่มต้นและประมวลผลเอกสาร PDF ครับ..."):
-            predefined_pdf_path = "data/Lar/Rule Lar.pdf"  # Path to the embedded PDF file
+            predefined_pdf_path = "docs/TU-PDF 01.pdf"  # Path to the embedded PDF file
             with open(predefined_pdf_path, "rb") as pdf_file:  # rb คือ read binary อ่านข้อมูลจากไฟล์ PDFที่เป็น binary
                 raw_text = get_pdf_text([pdf_file])  # Process the predefined PDF
                 text_chunks = get_text_chunks(raw_text)  # Get text chunks
