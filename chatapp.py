@@ -25,7 +25,7 @@ def get_pdf_text(pdf_docs):
 
 
 def get_text_chunks(text):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=50000, chunk_overlap=1000)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     chunks = text_splitter.split_text(text)
     return chunks
 
@@ -71,7 +71,7 @@ def user_input(user_question):
     # print(response)
     # st.write("Reply: ", response["output_text"])
     
-    st.write("Reply: ", response)
+    # st.write("Reply: ", response)
     # แสดงคำถามของ user ด้านขวา
     st.markdown(
         f"""
@@ -106,16 +106,21 @@ def main():
         st.title("About TUTHINK")
         st.markdown("📖 TUTHINK เป็นแอปพลิเคชันที่ช่วยตอบคำถามเกี่ยวกับเอกสาร PDF")
         
-        
+    # ตรวจสอบว่า vector_store อยู่ใน session_state หรือไม่
+    # state คือ ตัวแปรของ streamlit เก็บข้อมูลประมวลผลไว้ในหน่วยความจำ session และไม่ประมวลผลซ้ำเมื่อถามคำถามใหม่
+    if "vector_store" not in st.session_state:
     # บังคับให้ user ถามคำถามจาก PDF ที่กำหนดไว้เท่า
-    with st.spinner("กำลังเริ่มต้นและประมวลผลเอกสาร PDF ครับ..."):
-        predefined_pdf_path = "docs/TU-PDF 01.pdf"  # Path to the embedded PDF file
-        with open(predefined_pdf_path, "rb") as pdf_file:  # rb คือ read binary อ่านข้อมูลจากไฟล์ PDFที่เป็น binary
-            raw_text = get_pdf_text([pdf_file])  # Process the predefined PDF
-            text_chunks = get_text_chunks(raw_text)  # Get text chunks
-            get_vector_store(text_chunks)  # Create vector store
+        with st.spinner("กำลังเริ่มต้นและประมวลผลเอกสาร PDF ครับ..."):
+            predefined_pdf_path = "docs/TU-PDF 01.pdf"  # Path to the embedded PDF file
+            with open(predefined_pdf_path, "rb") as pdf_file:  # rb คือ read binary อ่านข้อมูลจากไฟล์ PDFที่เป็น binary
+                raw_text = get_pdf_text([pdf_file])  # Process the predefined PDF
+                text_chunks = get_text_chunks(raw_text)  # Get text chunks
+                get_vector_store(text_chunks)  # Create vector store
+            st.session_state.vector_store = True # บันทึกสถานะเป็น True เมื่อประมวลผลเสร็จแล้ว
+            st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
+    else:
         st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
-
+        
     # ช่องถามคำถามของ user
     user_question = st.text_input("Ask a Question from PDF ✍️📝")
 
