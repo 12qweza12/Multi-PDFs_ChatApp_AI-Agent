@@ -20,6 +20,10 @@ def get_pdf_text(pdf_docs):
         pdf_reader= PdfReader(pdf)
         for page in pdf_reader.pages:
             text+= page.extract_text()
+
+    if not text.strip():
+        raise ValueError("No text extracted from the PDF. Please check the PDF file.")
+    #ที่มัน Error เพราะ PDF บางไฟล์อ่านไม่ได้ มันอาจเป็นภาพสแกนหรือมีการเข้ารหัสที่ไม่สามารถอ่านได้
     return  text
 
 
@@ -31,6 +35,9 @@ def get_text_chunks(text):
 
 
 def get_vector_store(text_chunks):
+    if not text_chunks:
+        raise ValueError("No text chunks found. Please check the input text.")
+    
     embeddings = GoogleGenerativeAIEmbeddings(model = "models/embedding-001")
     vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
     vector_store.save_local("faiss_index") #บันทึก vector store ใน folder ชื่อ faiss_index
