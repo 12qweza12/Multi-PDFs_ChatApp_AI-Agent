@@ -148,7 +148,7 @@ def main():
     if "vector_store" not in st.session_state:
     # บังคับให้ user ถามคำถามจาก PDF ที่กำหนดไว้เท่า
         with st.spinner("กำลังเริ่มต้นและประมวลผลเอกสาร PDF ครับ..."):
-            predefined_pdf_path = "docs/TU-PDF 01.pdf"  # Path to the embedded PDF file
+            predefined_pdf_path = "docs\AI Assistants.pdf"  # Path to the embedded PDF file
             with open(predefined_pdf_path, "rb") as pdf_file:  # rb คือ read binary อ่านข้อมูลจากไฟล์ PDFที่เป็น binary
                 raw_text = get_pdf_text([pdf_file])  # Process the predefined PDF
                 text_chunks = get_text_chunks(raw_text)  # Get text chunks
@@ -159,7 +159,7 @@ def main():
         st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
         
     # ช่องถามคำถามของ user
-    user_question = st.text_input("Ask a Question from PDF ✍️📝")
+    user_question = st.chat_input("Ask a Question from PDF ✍️📝")
 
     # run function ประมวลผลคำถามของ user
     if user_question:
