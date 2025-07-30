@@ -9,6 +9,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationalRetrievalChain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from side_bar.sidebar import sidebar
+from side_bar.footer import footer
 
 load_dotenv()
 # os.getenv("GOOGLE_API_KEY")
@@ -41,6 +46,7 @@ def get_vector_store(text_chunks):
     embeddings = GoogleGenerativeAIEmbeddings(model = "models/embedding-001")
     vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
     vector_store.save_local("faiss_index") #บันทึก vector store ใน folder ชื่อ faiss_index
+    return vector_store
 
 
 def get_conversational_chain():
@@ -101,33 +107,7 @@ def user_input(user_question):
                 <b>TUTHINK 🤖:</b> {chat["tuthink"]}
             </div>
             """,
-            unsafe_allow_html=True
-        )
-    # feature แสดงประวัติการสนทนา //stop
-
-    # print(response)
-    # st.write("Reply: ", response["output_text"])
-    
-    # st.write("Reply: ", response)
-    # แสดงคำถามของ user ด้านขวา
-    # st.markdown(
-    #     f"""
-    #     <div style="text-align: right; background-color: #f9f9f9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
-    #         <b>User:</b> {user_question}
-    #     </div>
-    #     """,
-    #     unsafe_allow_html=True
-    # )
-
-    # แสดงคำตอบของ AI ด้านซ้าย
-    # st.markdown(
-    #     f"""
-    #     <div style="text-align: left; background-color: #e8f5e9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
-    #         <b>TUTHINK 🤖:</b> {response["output_text"]}
-    #     </div>
-    #     """,
-    #     unsafe_allow_html=True
-    # )
+            unsafe_allow_html=True)
 
 
 
@@ -136,59 +116,48 @@ def main():
     st.set_page_config("TUTHINK-PDF", page_icon=":computer:")
     st.header("TUTHINK - Chatbot 📋🗂️🏥")
 
-    with st.sidebar:
-        st.image("img/chatbot.jpg")
-        st.write("---")
-        
-        st.title("About TUTHINK")
-        st.markdown("📖 TUTHINK เป็นแอปพลิเคชันที่ช่วยตอบคำถามเกี่ยวกับเอกสาร PDF")
-        
+    sidebar() #import sidebar มาจาก side_bar/sidebar.py
+    footer() #import footer มาจาก side_bar/footer.py
+
+    pdf_options = {
+        "ระเบียบการแต่งกาย": "docs\ระเบียบการแต่งกาย\เอกสารแนบท้าย2.pdf",
+        "สวัสดิการยืดหยุ่น" : "docs\สวัสดิการยืดหยุ่น\ประกาศ มธ.สวัสดิการด้านสุขภาพ พ.ศ.2566.pdf",
+        "ข้อบังคับว่าด้วยวินัย" : "docs\ข้อบังคับว่าด้วยวินัย\สาระสำคัญข้อบังคับวินัย 2566.pdf"
+    }
+
+    selected_pdf = st.selectbox("เลือกหมวดหมู่ที่ต้องการถาม", list(pdf_options.keys()))
     # ตรวจสอบว่า vector_store อยู่ใน session_state หรือไม่
     # state คือ ตัวแปรของ streamlit เก็บข้อมูลประมวลผลไว้ในหน่วยความจำ session และไม่ประมวลผลซ้ำเมื่อถามคำถามใหม่
-    if "vector_store" not in st.session_state:
+    #ตอนแรกมีแค่ not in st.session_state ตอนหลังมาเพิ่ม st.session_state.selected_doc ด้วย
+    if "vector_store" not in st.session_state or st.session_state.selected_pdf != selected_pdf:
+
     # บังคับให้ user ถามคำถามจาก PDF ที่กำหนดไว้เท่า
-        with st.spinner("กำลังเริ่มต้นและประมวลผลเอกสาร PDF ครับ..."):
-            predefined_pdf_path = "docs\ระเบียบการแต่งกาย\เอกสารแนบท้าย2.pdf"  # Path to the embedded PDF file
-            with open(predefined_pdf_path, "rb") as pdf_file:  # rb คือ read binary อ่านข้อมูลจากไฟล์ PDFที่เป็น binary
+        with st.spinner("กำลังเริ่มต้นและประมวลผลเอกสาร PDF ครับ...", show_time=True):
+            # predefined_pdf_path = "docs\ระเบียบการแต่งกาย\เอกสารแนบท้าย2.pdf"  # Path to the embedded PDF file
+            # with open(predefined_pdf_path, "rb") as pdf_file:  # rb คือ read binary อ่านข้อมูลจากไฟล์ PDFที่เป็น binary
+            with open(pdf_options[selected_pdf], "rb") as pdf_file:
                 raw_text = get_pdf_text([pdf_file])  # Process the predefined PDF
                 text_chunks = get_text_chunks(raw_text)  # Get text chunks
                 get_vector_store(text_chunks)  # Create vector store
-            st.session_state.vector_store = True # บันทึกสถานะเป็น True เมื่อประมวลผลเสร็จแล้ว
+            st.session_state.vector_store = True # บันทึกสถานะเป็น True เมื่อประมวลผลเสร็จแล้วเพื่อไม่ให้ประมวลผลซ้ำในรอบถัดไปที่ถามคำถาม
+            st.session_state.selected_pdf = selected_pdf # บันทึก PDF ที่เลือกไว้ใน session_state
             st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
-    else:
-        st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
+            
+    st.info(f"คุณกำลังถามคำถามจากหมวดหมู่ : {selected_pdf}")
+    # else:
+    #     st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
         
     # ช่องถามคำถามของ user
-    user_question = st.text_input("Ask a Question from PDF ✍️📝")
+    user_question = st.chat_input("Ask a Question from PDF ✍️📝")
 
     # run function ประมวลผลคำถามของ user
     if user_question:
         user_input(user_question)
 
-    # with st.sidebar:
-
-    #     st.image("img/chatbot.jpg")
-    #     st.write("---")
-        
-    #     st.title("📁 PDF File's Section")
-    #     pdf_docs = st.file_uploader("Upload your PDF Files & \n Click on the Submit & Process Button ", accept_multiple_files=True)
-    #     if st.button("Submit & Process"):
-    #         with st.spinner("Processing..."): # user friendly message.
-    #             raw_text = get_pdf_text(pdf_docs) # get the pdf text
-    #             text_chunks = get_text_chunks(raw_text) # get the text chunks
-    #             get_vector_store(text_chunks) # create vector store
-    #             st.success("Done")
-        
 
 
-    st.markdown(
-        """
-        <div style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #f0f2f6; padding: 15px; text-align: center;">
-            © <a href="https://intranet.hospital.tu.ac.th/" target="_blank">Thammasat Hospital University</a>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+
+    
 
 if __name__ == "__main__":
     main()
