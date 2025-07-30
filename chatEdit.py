@@ -47,7 +47,7 @@ def get_conversational_chain():
 
     prompt_template = """
     Answer the question as detailed as possible from the provided context, make sure to provide all the details, if the answer is not in
-    provided context just say, "answer is not available in the context", don't provide the wrong answer\n\n
+    provided context just say, "ไม่มีข้อมูลในเอกสารครับ ลองถามคำถามอื่นเพิ่มเติมครับ", don't provide the wrong answer\n\n
     Context:\n {context}?\n
     Question: \n{question}\n
 
@@ -74,22 +74,100 @@ def user_input(user_question):
     response = chain(
         {"input_documents":docs, "question": user_question}
         , return_only_outputs=True)
-                                    
-    #เก็บคำถามและคำตอบใน chat_history
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-    #st.write(st.session_state.chat_history)
     
-    #st.session_state.chat_history.append({"user": user_question, "tuthink": response["output_text"]})
+    return response["output_text"]  # Return the output text for further processing or display
+
+
+def main():
+    st.set_page_config("TUTHINK-PDF", page_icon=":computer:")
+    st.header("TUTHINK - Chatbot 📋🗂️🏥")
+
+    with st.sidebar:
+        st.image("img/chatbot.jpg")
+        st.write("---")
+        
+        st.title("About TUTHINK")
+        st.markdown("📖 TUTHINK เป็นแอปพลิเคชันที่ช่วยตอบคำถามเกี่ยวกับเอกสาร PDF")
+
+        st.markdown(
+        """
+        <div style="position: fixed; bottom: 0; left: 0; padding: 15px; text-align: left;">
+            © <a href="https://intranet.hospital.tu.ac.th/" target="_blank">Thammasat Hospital University</a>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+        
+    # ตรวจสอบว่า vector_store อยู่ใน session_state หรือไม่
+    # state คือ ตัวแปรของ streamlit เก็บข้อมูลประมวลผลไว้ในหน่วยความจำ session และไม่ประมวลผลซ้ำเมื่อถามคำถามใหม่
+    if "vector_store" not in st.session_state:
+    # บังคับให้ user ถามคำถามจาก PDF ที่กำหนดไว้เท่า
+        with st.spinner("กำลังเริ่มต้นและประมวลผลเอกสาร PDF ครับ..."):
+            predefined_pdf_path = "docs\Rules.pdf"  # Path to the embedded PDF file
+            with open(predefined_pdf_path, "rb") as pdf_file:  # rb คือ read binary อ่านข้อมูลจากไฟล์ PDFที่เป็น binary
+                raw_text = get_pdf_text([pdf_file])  # Process the predefined PDF
+                text_chunks = get_text_chunks(raw_text)  # Get text chunks
+                get_vector_store(text_chunks)  # Create vector store
+            st.session_state.vector_store = True # บันทึกสถานะเป็น True เมื่อประมวลผลเสร็จแล้ว
+            st.toast("ประมวลผล PDF เสร็จเรียบร้อย!", icon="✅")  # ใช้ st.toast แสดงข้อความสำเร็จ
+    # else:
+    #     st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
+
+    #1. เริ่มต้น chat_history ถ้าไม่มี
+    if "messages" not in st.session_state:
+        st.session_state.messages = [{"role" : "assistant", "content" : "สวัสดีครับ! ผมคือ TUTHINK Chatbot ยินดีให้บริการตอบคำถามเกี่ยวกับเอกสาร PDF ของคุณ ถามมาได้เลยครับ!"}]
     
-    # feature conversation history
-    for chat in st.session_state.chat_history:
-        if isinstance (chat, user_input):
-            with st.chat_message("user"):
-                st.markdown(chat.content)      # แสดงคำถามของ user
-        else:
-            with st.chat_message("tuthink"):
-                st.markdown(chat.content)     # แสดงคำตอบของ AI 
+    #2. แสดงประวัติการสนทนา
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    #3. รอรับคำถามจากผู้ใช้
+    if prompt := st.chat_input("Ask a Question from PDF ✍️📝"):
+        st.session_state.messages.append({"role":"user", "content": prompt})  # บันทึกคำถามของผู้ใช้ใน chat_history
+        with st.chat_message("user" , avatar="👤"):
+            st.markdown(prompt)
+
+        #ประมวลผลคำถาม
+        #with st.chat_message("assistant"):
+        with st.spinner("TUTHINK กำลังประมวลผลคำถามของคุณ..."):
+            response = user_input(prompt)  # ประมวลผลคำถาม
+            with st.chat_message("assistant"):
+                st.markdown(response)
+                st.session_state.messages.append({"role" : "assistant", "content":response}) # บันทึกคำตอบของ AI ใน chat_history
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # #เก็บคำถามและคำตอบใน chat_history
+    # if "chat_history" not in st.session_state:
+    #     st.session_state.chat_history = []
+    # #st.write(st.session_state.chat_history)
+    
+    # #st.session_state.chat_history.append({"user": user_question, "tuthink": response["output_text"]})
+    
+    # # feature conversation history
+    # for chat in st.session_state.chat_history:
+    #     if isinstance (chat, user_input):
+    #         with st.chat_message("user"):
+    #             st.markdown(chat.content)      # แสดงคำถามของ user
+    #     else:
+    #         with st.chat_message("tuthink"):
+    #             st.markdown(chat.content)     # แสดงคำตอบของ AI 
 
         # st.markdown(
         #     f"""
@@ -138,38 +216,16 @@ def user_input(user_question):
 
 
 
-def main():
-    st.set_page_config("TUTHINK-PDF", page_icon=":computer:")
-    st.header("TUTHINK - Chatbot 📋🗂️🏥")
 
-    with st.sidebar:
-        st.image("img/chatbot.jpg")
-        st.write("---")
-        
-        st.title("About TUTHINK")
-        st.markdown("📖 TUTHINK เป็นแอปพลิเคชันที่ช่วยตอบคำถามเกี่ยวกับเอกสาร PDF")
-        
-    # ตรวจสอบว่า vector_store อยู่ใน session_state หรือไม่
-    # state คือ ตัวแปรของ streamlit เก็บข้อมูลประมวลผลไว้ในหน่วยความจำ session และไม่ประมวลผลซ้ำเมื่อถามคำถามใหม่
-    if "vector_store" not in st.session_state:
-    # บังคับให้ user ถามคำถามจาก PDF ที่กำหนดไว้เท่า
-        with st.spinner("กำลังเริ่มต้นและประมวลผลเอกสาร PDF ครับ..."):
-            predefined_pdf_path = "docs\AI Assistants.pdf"  # Path to the embedded PDF file
-            with open(predefined_pdf_path, "rb") as pdf_file:  # rb คือ read binary อ่านข้อมูลจากไฟล์ PDFที่เป็น binary
-                raw_text = get_pdf_text([pdf_file])  # Process the predefined PDF
-                text_chunks = get_text_chunks(raw_text)  # Get text chunks
-                get_vector_store(text_chunks)  # Create vector store
-            st.session_state.vector_store = True # บันทึกสถานะเป็น True เมื่อประมวลผลเสร็จแล้ว
-            st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
-    else:
-        st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
-        
+
+
+
     # ช่องถามคำถามของ user
-    user_question = st.chat_input("Ask a Question from PDF ✍️📝")
+    #user_question = st.chat_input("Ask a Question from PDF ✍️📝")
 
     # run function ประมวลผลคำถามของ user
-    if user_question:
-        user_input(user_question)
+    # if user_question:
+    #     user_input(user_question)
 
     # with st.sidebar:
 
@@ -187,14 +243,6 @@ def main():
         
 
 
-    st.markdown(
-        """
-        <div style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #f0f2f6; padding: 15px; text-align: center;">
-            © <a href="https://intranet.hospital.tu.ac.th/" target="_blank">Thammasat Hospital University</a>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
 
-if __name__ == "__main__":
-    main()
+
+
