@@ -9,6 +9,7 @@ __pycache__/
 *.pyc
 faiss_index/
 docs/
+environment/
 
 # User-specific files
 *.rsuser
