@@ -152,7 +152,8 @@ def main():
 
     # run function ประมวลผลคำถามของ user
     if user_question:
-        user_input(user_question)
+        with st.spinner("กำลังประมวลผลคำถามของคุณ...", show_time=True):
+            user_input(user_question)
 
 
 
