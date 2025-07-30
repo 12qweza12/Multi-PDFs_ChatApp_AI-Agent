@@ -81,15 +81,17 @@ def user_input(user_question):
         {"input_documents":docs, "question": user_question}
         , return_only_outputs=True)
                                     
-    #เก็บคำถามและคำตอบใน chat_history
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-    st.write(st.session_state.chat_history)
+    #เก็บคำถามและคำตอบใน display_history
+    if "display_history" not in st.session_state:
+        st.session_state.display_history = []
+        st.session_state.display_history.append({"user": user_question, "tuthink": response["output_text"]})
+    else:
+        st.session_state.display_history.append({"user": user_question, "tuthink": response["output_text"]})
     
-    st.session_state.chat_history.append({"user": user_question, "tuthink": response["output_text"]})
+    st.write(st.session_state.display_history)
     
     # feature แสดงประวัติการสนทนา จ้า //start
-    for chat in st.session_state.chat_history:
+    for chat in st.session_state.display_history:
         # แสดงคำถามของ user ด้านขวา    
         st.markdown(
             f"""
