@@ -88,28 +88,31 @@ def user_input(user_question):
     else:
         st.session_state.display_history.append({"user": user_question, "tuthink": response["output_text"]})
     
-    st.write(st.session_state.display_history)
+    st.write(st.session_state.display_history)  
     
     # feature แสดงประวัติการสนทนา จ้า //start
     for chat in st.session_state.display_history:
-        # แสดงคำถามของ user ด้านขวา    
-        st.markdown(
-            f"""
-            <div style="text-align: right; background-color: #f9f9f9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
-                <b>User:</b> {chat["user"]}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )    
+        st.chat_message("user").markdown(chat["user"])  # แสดงคำถามของ user
+        st.chat_message("tuthink", avatar='assistant').markdown(chat["tuthink"])
+
+        # # แสดงคำถามของ user ด้านขวา    
+        # st.markdown(
+        #     f"""
+        #     <div style="text-align: right; background-color: #f9f9f9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+        #         <b>User:</b> {chat["user"]}
+        #     </div>
+        #     """,
+        #     unsafe_allow_html=True
+        # )    
         
-        # แสดงคำตอบของ AI ด้านซ้าย    
-        st.markdown(
-            f"""
-            <div style="text-align: left; background-color: #e8f5e9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
-                <b>TUTHINK 🤖:</b> {chat["tuthink"]}
-            </div>
-            """,
-            unsafe_allow_html=True)
+        # # แสดงคำตอบของ AI ด้านซ้าย    
+        # st.markdown(
+        #     f"""
+        #     <div style="text-align: left; background-color: #e8f5e9; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+        #         <b>TUTHINK 🤖:</b> {chat["tuthink"]}
+        #     </div>
+        #     """,
+        #     unsafe_allow_html=True)
 
 
 
@@ -124,7 +127,8 @@ def main():
     pdf_options = {
         "ระเบียบการแต่งกาย": "docs\ระเบียบการแต่งกาย\เอกสารแนบท้าย2.pdf",
         "สวัสดิการยืดหยุ่น" : "docs\สวัสดิการยืดหยุ่น\ประกาศ มธ.สวัสดิการด้านสุขภาพ พ.ศ.2566.pdf",
-        "ข้อบังคับว่าด้วยวินัย" : "docs\ข้อบังคับว่าด้วยวินัย\สาระสำคัญข้อบังคับวินัย 2566.pdf"
+        "ข้อบังคับว่าด้วยวินัย" : "docs\ข้อบังคับว่าด้วยวินัย\สาระสำคัญข้อบังคับวินัย 2566.pdf",
+        "ทดสอบ" : "docs\ทดสอบ\สิรวิชญ์_จุทอง.pdf",
     }
 
     selected_pdf = st.selectbox("เลือกหมวดหมู่ที่ต้องการถาม", list(pdf_options.keys()))
