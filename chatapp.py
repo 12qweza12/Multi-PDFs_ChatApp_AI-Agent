@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from side_bar.sidebar import sidebar
+# from side_bar.sidebar import sidebar
 from side_bar.footer import footer
 
 load_dotenv()
@@ -51,18 +51,25 @@ def get_vector_store(text_chunks):
 
 def get_conversational_chain():
 
-    prompt_template = """
-    Answer the question as detailed as possible from the provided context, make sure to provide all the details, if the answer is not in
-    provided context just say, "answer is not available in the context", don't provide the wrong answer\n\n
-    Context:\n {context}?\n
-    Question: \n{question}\n
-
-    Answer:
-    """
-
     model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.3)
 
-    prompt = PromptTemplate(template = prompt_template, input_variables = ["context", "question"])
+    prompt = PromptTemplate(
+        template = """
+            You are assisting hospital staff and HR personnel by answering questions based on the provided PDF documents.
+            Please provide detailed and accurate answers based solely on the context provided. If the answer is not available
+            in the context, respond with: "The information you are looking for is not available in the provided documents. Please check additional resources."
+            Do not guess or provide incorrect answers.
+
+            Context:
+            {context}
+
+            Question:
+            {question}
+
+            Answer (short and concise):
+        """,
+        input_variables = ["context", "question"]
+    )
     chain = load_qa_chain(model, chain_type="stuff", prompt=prompt)
 
     return chain
@@ -76,17 +83,22 @@ def user_input(user_question):
     docs = new_db.similarity_search(user_question)
 
     chain = get_conversational_chain()
-
+    st.write(chain)
     response = chain(
         {"input_documents":docs, "question": user_question}
         , return_only_outputs=True)
-                                    
+    # st.write(response) #จะออกมาเป็น output_text จั๊ฟ
+
     #เก็บคำถามและคำตอบใน display_history
     if "display_history" not in st.session_state:
         st.session_state.display_history = []
-        st.session_state.display_history.append({"user": user_question, "tuthink": response["output_text"]})
+        st.session_state.display_history.append(
+            {"user": user_question, "tuthink": response["output_text"]}
+        )
     else:
-        st.session_state.display_history.append({"user": user_question, "tuthink": response["output_text"]})
+        st.session_state.display_history.append(
+            {"user": user_question, "tuthink": response["output_text"]}
+        )
     
     st.write(st.session_state.display_history)  
     
@@ -121,8 +133,8 @@ def main():
     st.set_page_config("TUTHINK-PDF", page_icon=":computer:")
     st.header("TUTHINK - Chatbot 📋🗂️🏥")
 
-    sidebar() #import sidebar มาจาก side_bar/sidebar.py
-    footer() #import footer มาจาก side_bar/footer.py
+    # sidebar() #import sidebar มาจาก side_bar/sidebar.py
+    # footer() #import footer มาจาก side_bar/footer.py
 
     pdf_options = {
         "ระเบียบการแต่งกาย": "docs\ระเบียบการแต่งกาย\เอกสารแนบท้าย2.pdf",
@@ -130,8 +142,15 @@ def main():
         "ข้อบังคับว่าด้วยวินัย" : "docs\ข้อบังคับว่าด้วยวินัย\สาระสำคัญข้อบังคับวินัย 2566.pdf",
         "ทดสอบ" : "docs\ทดสอบ\สิรวิชญ์_จุทอง.pdf",
     }
+    with st.sidebar:
+        st.image("img/chatbot.jpg")
+        st.write("---")
+            
+        st.title("About TUTHINK")
+        st.markdown("📖 TUTHINK เป็นแอปพลิเคชันที่ช่วยตอบคำถามเกี่ยวกับเอกสาร PDF")
 
-    selected_pdf = st.selectbox("เลือกหมวดหมู่ที่ต้องการถาม", list(pdf_options.keys()))
+        selected_pdf = st.selectbox("เลือกหมวดหมู่ที่ต้องการถาม", list(pdf_options.keys()))
+
     # ตรวจสอบว่า vector_store อยู่ใน session_state หรือไม่
     # state คือ ตัวแปรของ streamlit เก็บข้อมูลประมวลผลไว้ในหน่วยความจำ session และไม่ประมวลผลซ้ำเมื่อถามคำถามใหม่
     #ตอนแรกมีแค่ not in st.session_state ตอนหลังมาเพิ่ม st.session_state.selected_doc ด้วย
@@ -147,14 +166,14 @@ def main():
                 get_vector_store(text_chunks)  # Create vector store
             st.session_state.vector_store = True # บันทึกสถานะเป็น True เมื่อประมวลผลเสร็จแล้วเพื่อไม่ให้ประมวลผลซ้ำในรอบถัดไปที่ถามคำถาม
             st.session_state.selected_pdf = selected_pdf # บันทึก PDF ที่เลือกไว้ใน session_state
-            st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
+            st.toast("ประมวลผล PDF เสร็จแล้ว!!", icon="✅")
             
     st.info(f"คุณกำลังถามคำถามจากหมวดหมู่ : {selected_pdf}")
     # else:
     #     st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
         
     # ช่องถามคำถามของ user
-    user_question = st.chat_input("Ask a Question from PDF ✍️📝")
+    user_question = st.chat_input(placeholder="Ask a Question from PDF ✍️📝")
 
     # run function ประมวลผลคำถามของ user
     if user_question:
