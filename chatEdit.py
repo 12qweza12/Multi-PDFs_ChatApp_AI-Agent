@@ -47,8 +47,9 @@ def get_vector_store(text_chunks):
 def get_conversational_chain():
 
     prompt_template = """
-    Answer the question as detailed as possible from the provided context, make sure to provide all the details, if the answer is not in
-    provided context just say, "ไม่มีข้อมูลในเอกสารครับ ลองถามคำถามอื่นเพิ่มเติมครับ", don't provide the wrong answer\n\n
+    You are an expert AI chatbot designed to answer user questions based on the selected document category. Always use only the information from the provided context below, which comes from the document category: "{category}".
+    Answer the user's question as accurately and completely as possible. If the answer is not found in the context, reply:
+    "ไม่มีข้อมูลในเอกสารหมวดหมู่นี้ครับ ลองถามคำถามอื่นเพิ่มเติมครับ" and do not guess or provide incorrect information.
     Context:\n {context}?\n
     Question: \n{question}\n
 
@@ -83,12 +84,22 @@ def main():
     st.set_page_config("TUTHINK-PDF", page_icon=":computer:")
     st.header("TUTHINK - Chatbot 📋🗂️🏥")
 
+    pdf_options = {
+        "สวัสดิการด้านสุขภาพ📁": "docs\Rules.pdf",
+        "วินัยลูกจ้าง📁": "docs\วินัยลูกจ้าง.pdf",
+        "รายงานสหกิจ":"docs\\65104788_เบญญาภา_ถนอมใจ.pdf"
+    }
+
     with st.sidebar:
         st.image("img/chatbot.jpg")
         st.write("---")
         
         st.title("About TUTHINK")
         st.markdown("📖 TUTHINK เป็นแอปพลิเคชันที่ช่วยตอบคำถามเกี่ยวกับเอกสาร PDF")
+
+
+        st.write("---")
+        select_pdf = st.selectbox("เลือกหมวดหมู่เอกสารที่ต้องการถาม",list(pdf_options.keys()))    
 
         st.markdown(
         """
@@ -97,20 +108,28 @@ def main():
         </div>
         """,
         unsafe_allow_html=True
-    )
+        )
+        
+
+
+    
+
         
     # ตรวจสอบว่า vector_store อยู่ใน session_state หรือไม่
     # state คือ ตัวแปรของ streamlit เก็บข้อมูลประมวลผลไว้ในหน่วยความจำ session และไม่ประมวลผลซ้ำเมื่อถามคำถามใหม่
-    if "vector_store" not in st.session_state:
+    if "vector_store" not in st.session_state or st.session_state.select_pdf != select_pdf:
     # บังคับให้ user ถามคำถามจาก PDF ที่กำหนดไว้เท่านั้น
         with st.spinner("กำลังเริ่มต้นและประมวลผลเอกสาร PDF ครับ..."):
-            predefined_pdf_path = "docs\Rules.pdf"  # Path to the embedded PDF file
-            with open(predefined_pdf_path, "rb") as pdf_file:  # rb คือ read binary อ่านข้อมูลจากไฟล์ PDFที่เป็น binary
+            #predefined_pdf_path = "docs\Rules.pdf"  # Path to the embedded PDF file
+            #with open(predefined_pdf_path, "rb") as pdf_file:  # rb คือ read binary อ่านข้อมูลจากไฟล์ PDFที่เป็น binary
+            with open(pdf_options[select_pdf],"rb") as pdf_file:
                 raw_text = get_pdf_text([pdf_file])  # Process the predefined PDF
                 text_chunks = get_text_chunks(raw_text)  # Get text chunks
                 get_vector_store(text_chunks)  # Create vector store
             st.session_state.vector_store = True # บันทึกสถานะเป็น True เมื่อประมวลผลเสร็จแล้ว
+            st.session_state.select_pdf = select_pdf
             st.toast("ประมวลผล PDF เสร็จเรียบร้อย!", icon="✅")  # ใช้ st.toast แสดงข้อความสำเร็จ
+    st.info(f"คุณกำลังถามคำถามจากเอกสาร: {select_pdf} 📁")  # แสดงชื่อเอกสารที่เลือก
     # else:
     #     st.success("ประมวลผล PDF เสร็จเรียบร้อยแล้วถามคำถามได้เลยครับ!!")
 
