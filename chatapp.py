@@ -142,6 +142,14 @@ def main():
         "ข้อบังคับว่าด้วยวินัย" : "docs\ข้อบังคับว่าด้วยวินัย\สาระสำคัญข้อบังคับวินัย 2566.pdf",
         "ทดสอบ" : "docs\ทดสอบ\สิรวิชญ์_จุทอง.pdf",
     }
+
+    quick_questions = [
+        "สรุปเอกสารนี้",
+        "ตอบคำถามอะไรได้บ้าง",
+        "What are the disciplinary rules?",
+        "Can you summarize the key points of the uploaded document?"
+    ]
+
     with st.sidebar:
         st.image("img/chatbot.jpg")
         st.write("---")
@@ -150,6 +158,12 @@ def main():
         st.markdown("📖 TUTHINK เป็นแอปพลิเคชันที่ช่วยตอบคำถามเกี่ยวกับเอกสาร PDF")
 
         selected_pdf = st.selectbox("เลือกหมวดหมู่ที่ต้องการถาม", list(pdf_options.keys()))
+
+        st.write("---")
+        st.title("Quick Questions")
+        for question in quick_questions:
+            if st.button(question, key=question, use_container_width=True):
+                st.session_state.selected_question = question
 
     # ตรวจสอบว่า vector_store อยู่ใน session_state หรือไม่
     # state คือ ตัวแปรของ streamlit เก็บข้อมูลประมวลผลไว้ในหน่วยความจำ session และไม่ประมวลผลซ้ำเมื่อถามคำถามใหม่
@@ -176,9 +190,9 @@ def main():
     user_question = st.chat_input(placeholder="Ask a Question from PDF ✍️📝")
 
     # run function ประมวลผลคำถามของ user
-    if user_question:
+    if user_question or "selected_question" in st.session_state:
         with st.spinner("กำลังประมวลผลคำถามของคุณ...", show_time=True):
-            user_input(user_question)
+            user_input(user_question if user_question else st.session_state.pop("selected_question"))
 
 
 
