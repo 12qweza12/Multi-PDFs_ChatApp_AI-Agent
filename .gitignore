@@ -10,7 +10,8 @@ __pycache__/
 faiss_index/
 docs/
 data/
-chatapp copy.py
+chatapp-copy.py
+
 
 # User-specific files
 *.rsuser

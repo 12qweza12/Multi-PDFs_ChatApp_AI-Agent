@@ -13,7 +13,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 # from side_bar.sidebar import sidebar
-from side_bar.footer import footer
+# from side_bar.footer import footer
 
 load_dotenv()
 # os.getenv("GOOGLE_API_KEY")
@@ -43,7 +43,7 @@ def get_vector_store(text_chunks):
     if not text_chunks:
         raise ValueError("No text chunks found. Please check the input text.")
     
-    embeddings = GoogleGenerativeAIEmbeddings(model = "models/embedding-001")
+    embeddings = GoogleGenerativeAIEmbeddings(model = "models/gemini-embedding-001")
     vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
     vector_store.save_local("faiss_index") #บันทึก vector store ใน folder ชื่อ faiss_index
     return vector_store
@@ -51,7 +51,7 @@ def get_vector_store(text_chunks):
 
 def get_conversational_chain():
 
-    model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.3)
+    model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.1)
 
     prompt = PromptTemplate(
         template = """
@@ -66,7 +66,6 @@ def get_conversational_chain():
             Question:
             {question}
 
-            Answer (short and concise):
         """,
         input_variables = ["context", "question"]
     )
@@ -77,13 +76,13 @@ def get_conversational_chain():
 
 
 def user_input(user_question):
-    embeddings = GoogleGenerativeAIEmbeddings(model = "models/embedding-001")
+    embeddings = GoogleGenerativeAIEmbeddings(model = "models/gemini-embedding-001")
     
     new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True) #เพิ่ม allow_dangerous_deserialization
     docs = new_db.similarity_search(user_question)
 
     chain = get_conversational_chain()
-    st.write(chain)
+    # st.write(chain)
     response = chain(
         {"input_documents":docs, "question": user_question}
         , return_only_outputs=True)
@@ -100,7 +99,7 @@ def user_input(user_question):
             {"user": user_question, "tuthink": response["output_text"]}
         )
     
-    st.write(st.session_state.display_history)  
+    # st.write(st.session_state.display_history)  
     
     # feature แสดงประวัติการสนทนา จ้า //start
     for chat in st.session_state.display_history:
@@ -137,6 +136,8 @@ def main():
     # footer() #import footer มาจาก side_bar/footer.py
 
     pdf_options = {
+        "pBoat": "docs\pBoat\BOT_ans.pdf",
+        "pBoat_1": "docs\pBoat\BOT_ans_1.pdf",
         "ระเบียบการแต่งกาย": "docs\ระเบียบการแต่งกาย\เอกสารแนบท้าย2.pdf",
         "สวัสดิการยืดหยุ่น" : "docs\สวัสดิการยืดหยุ่น\ประกาศ มธ.สวัสดิการด้านสุขภาพ พ.ศ.2566.pdf",
         "ข้อบังคับว่าด้วยวินัย" : "docs\ข้อบังคับว่าด้วยวินัย\สาระสำคัญข้อบังคับวินัย 2566.pdf",
